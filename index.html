@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor de Transmissão de Dados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0a0c;
+      --bg-surface: #111115;
+      --bg-elevated: #17171d;
+      --bg-hover: #1e1e26;
+      --border-subtle: #24242e;
+      --border-strong: #343442;
+      --text-primary: #ededf0;
+      --text-secondary: #9898a6;
+      --text-muted: #646472;
+      --accent: #3b82f6;
+      --status-ok: #10b981;
+      --status-warn: #f59e0b;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOP NAVIGATION / HEADER */
+    header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      height: 56px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--status-ok);
+    }
+
+    .brand-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-divider {
+      color: var(--border-strong);
+    }
+
+    .brand-env {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* CONTROLS */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .scenario-tabs {
+      display: flex;
+      background: var(--bg-base);
+      padding: 3px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      padding: 5px 12px;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-base);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .speed-control label {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .speed-presets {
+      display: flex;
+      gap: 2px;
+    }
+
+    .speed-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .speed-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+
+    .speed-btn.active {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    input[type="range"] {
+      accent-color: var(--text-primary);
+      width: 76px;
+      height: 4px;
+      cursor: pointer;
+    }
+
+    .speed-readout {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .action-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    .action-btn.paused {
+      border-color: var(--status-warn);
+      color: var(--status-warn);
+    }
+
+    /* MAIN CONTAINER */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 24px;
+      gap: 16px;
+      max-width: 1640px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* DINO RUNNER BANNER */
+    .dino-runner-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dino-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .dino-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dino-hint {
+      color: var(--text-muted);
+      font-size: 0.68rem;
+    }
+
+    .dino-stats {
+      display: flex;
+      gap: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dino-canvas-wrap {
+      width: 100%;
+      height: 78px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+
+    #dinoCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* TELEMETRY BAR */
+    .telemetry-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--bg-surface);
+      overflow: hidden;
+    }
+
+    .metric-card {
+      padding: 12px 16px;
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .metric-card:last-child {
+      border-right: none;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-sub {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    /* PIPELINE SECTION */
+    .pipeline-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 20px 24px 28px;
+      position: relative;
+    }
+
+    .pipeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .pipeline-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pipeline-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    /* PIPELINE TRACK & NODES */
+    .pipeline-track-wrapper {
+      position: relative;
+      padding: 8px 0 12px;
+    }
+
+    /* Linha de transmissão alinhada na barra inferior dos cards */
+    .pipeline-wire {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--border-strong);
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+
+    /* Camada de pacotes */
+    .packets-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    .data-packet {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* Marcador técnico do pacote cravado na linha de baixo */
+    .packet-node {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text-primary);
+      border: 3px solid var(--bg-base);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .packet-tag {
+      position: absolute;
+      top: 12px;
+      left: 0;
+      transform: translateX(-50%);
+      background: var(--bg-base);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    /* STAGES GRID */
+    .stages-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
+      position: relative;
+      z-index: 5;
+    }
+
+    .stage-node {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s, background-color 0.15s;
+      position: relative;
+    }
+
+    .stage-node.active {
+      border-color: var(--node-color, var(--accent));
+      background: #1a1b24;
+    }
+
+    .stage-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .stage-step-id {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .stage-node.active .stage-step-id {
+      color: var(--node-color, var(--accent));
+    }
+
+    .stage-icon-svg {
+      width: 18px;
+      height: 18px;
+      color: var(--text-secondary);
+    }
+
+    .stage-node.active .stage-icon-svg {
+      color: var(--text-primary);
+    }
+
+    .stage-title {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .stage-subtitle {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      min-height: 34px;
+      margin-bottom: 14px;
+    }
+
+    /* Linha de baixo do card (onde o pacote corre alinhado) */
+    .stage-activity-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--bg-base);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .stage-activity-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--node-color, var(--accent));
+    }
+
+    .stage-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      padding-top: 8px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .stage-state {
+      font-weight: 500;
+    }
+
+    .stage-node.active .stage-state {
+      color: var(--status-ok);
+    }
+
+    /* LOWER PANELS */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1.3fr 1fr;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .panel-header h3 {
+      font-size: 0.76rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    .panel-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* CHECKLIST DE ETAPAS */
+    .visible-steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .step-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 0.78rem;
+    }
+
+    .step-row.active {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+    }
+
+    .step-row-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-num {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      width: 20px;
+    }
+
+    .step-row.active .step-num {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .step-action-desc {
+      color: var(--text-secondary);
+    }
+
+    .step-row.active .step-action-desc {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .step-tech-badge {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* PAYLOAD INSPECTOR */
+    .layer-stack {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .layer-chip {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--bg-base);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .layer-chip.lit {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .payload-box {
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      line-height: 1.55;
+      color: #d4d4d8;
+      flex: 1;
+      overflow-x: auto;
+    }
+
+    /* LOG STREAM */
+    .log-stream {
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      height: 225px;
+      overflow-y: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .log-entry {
+      display: flex;
+      gap: 8px;
+      line-height: 1.4;
+      border-bottom: 1px solid #16161c;
+      padding-bottom: 4px;
+    }
+
+    .log-time { color: var(--text-muted); }
+    .log-stage { font-weight: 500; color: var(--text-primary); min-width: 72px; }
+    .log-msg { color: var(--text-secondary); }
+
+    @media (max-width: 1280px) {
+      .stages-grid { grid-template-columns: repeat(3, 1fr); }
+      .pipeline-wire { display: none; }
+      .details-grid { grid-template-columns: 1fr; }
+      .telemetry-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="status-indicator" id="statusDot"></div>
+      <span class="brand-title">Pipeline Inspector</span>
+      <span class="brand-divider">/</span>
+      <span class="brand-env">fluxo-transmissao-live</span>
+    </div>
+
+    <div class="controls-bar">
+      <div class="scenario-tabs" id="scenarioTabs">
+        <button class="tab-btn active" data-scenario="api">API & Microsserviços</button>
+        <button class="tab-btn" data-scenario="iot">Ingestão & Streaming</button>
+        <button class="tab-btn" data-scenario="osi">Pilha TCP/IP</button>
+      </div>
+
+      <div class="speed-control">
+        <label for="speedSlider">Taxa</label>
+        <div class="speed-presets">
+          <button class="speed-btn" data-speed="0.3">0.3x</button>
+          <button class="speed-btn active" data-speed="1">1.0x</button>
+          <button class="speed-btn" data-speed="2">2.0x</button>
+          <button class="speed-btn" data-speed="3.5">3.5x</button>
+        </div>
+        <input type="range" id="speedSlider" min="0.2" max="4" step="0.1" value="1">
+        <span class="speed-readout" id="speedValue">1.0x</span>
+      </div>
+
+      <button class="action-btn" id="togglePlayBtn">
+        <span id="playText">Pausar</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- JOGO DO DINOSSAURO RODANDO NO TOPO EM TEMPO REAL -->
+    <section class="dino-runner-section">
+      <div class="dino-header">
+        <div class="dino-header-left">
+          <strong style="color: var(--text-primary);">T-REX RUNNER // STREAM KEEP-ALIVE</strong>
+          <span class="dino-hint">[Auto-Pilot Ativo • Pressione ESPAÇO ou clique na pista para pular manualmente]</span>
+        </div>
+        <div class="dino-stats">
+          <span>SALTO: <strong id="dinoStateLabel" style="color: var(--status-ok);">GROUND</strong></span>
+          <span>HI <strong id="dinoHighScore">00000</strong></span>
+          <span>SCORE <strong id="dinoScore" style="color: var(--text-primary);">00000</strong></span>
+        </div>
+      </div>
+      <div class="dino-canvas-wrap" id="dinoContainer">
+        <canvas id="dinoCanvas" width="1400" height="78"></canvas>
+      </div>
+    </section>
+
+    <!-- TELEMETRIA DIRETA -->
+    <section class="telemetry-strip">
+      <div class="metric-card">
+        <span class="metric-label">Etapa Atual (Líder)</span>
+        <div class="metric-row">
+          <strong class="metric-value" id="metricCurrentStage">01 / Origem</strong>
+          <span class="metric-sub">EM TRÂNSITO</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Pacotes Processados</span>
+        <div class="metric-row">
+          <strong class="metric-value" id="metricPackets">0</strong>
+          <span class="metric-sub">0% perda</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Throughput</span>
+        <div class="metric-row">
+          <strong class="metric-value" id="metricThroughput">42.0 MB/s</strong>
+          <span class="metric-sub">nominal</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Latência RTT</span>
+        <div class="metric-row">
+          <strong class="metric-value" id="metricLatency">24 ms</strong>
+          <span class="metric-sub">p95</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Verificação CRC / Hash</span>
+        <div class="metric-row">
+          <strong class="metric-value" id="metricHash">SHA-256</strong>
+          <span class="metric-sub" style="color: var(--status-ok);">OK</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PIPELINE PRINCIPAL -->
+    <section class="pipeline-section">
+      <div class="pipeline-header">
+        <div class="pipeline-title">
+          <span id="scenarioTitle">Topologia de Transmissão — Arquitetura de Microsserviços</span>
+        </div>
+        <span class="pipeline-subtitle">6 estágios sequenciais sincronizados</span>
+      </div>
+
+      <div class="pipeline-track-wrapper" id="trackWrapper">
+        <!-- Linha de transmissão alinhada com a barra inferior dos estágios -->
+        <div class="pipeline-wire" id="pipelineWire"></div>
+
+        <!-- Pacotes em trânsito -->
+        <div class="packets-layer" id="packetsLayer"></div>
+
+        <!-- 6 Etapas Visíveis -->
+        <div class="stages-grid" id="stagesGrid"></div>
+      </div>
+    </section>
+
+    <!-- PAINÉIS TÉCNICOS -->
+    <section class="details-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Execução por Etapa</h3>
+          <span class="panel-badge" id="leaderPacketBadge">PKT #101</span>
+        </div>
+        <div class="visible-steps-list" id="stepsChecklist"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Inspeção do Payload</h3>
+          <span class="panel-badge" id="currentProtocolBadge">HTTPS / TLS 1.3</span>
+        </div>
+        <div class="layer-stack" id="layerChips">
+          <span class="layer-chip">01. Raw</span>
+          <span class="layer-chip">02. TLS</span>
+          <span class="layer-chip">03. Gateway</span>
+          <span class="layer-chip">04. Broker</span>
+          <span class="layer-chip">05. Worker</span>
+          <span class="layer-chip">06. Storage</span>
+        </div>
+        <pre class="payload-box" id="payloadInspector"></pre>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Log de Eventos</h3>
+          <span class="panel-badge">stdout</span>
+        </div>
+        <div class="log-stream" id="logStream"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Ícones SVG técnicos minimalistas (estilo Lucide/Feather)
+    const ICONS = {
+      terminal: `<svg class="stage-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
+      lock: `<svg class="stage-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+      shield: `<svg class="stage-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+      layers: `<svg class="stage-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
+      cpu: `<svg class="stage-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`,
+      database: `<svg class="stage-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`
+    };
+
+    const SCENARIOS = {
+      api: {
+        title: "Topologia de Transmissão — API & Microsserviços",
+        stages: [
+          {
+            step: "01",
+            name: "Cliente / Origem",
+            subtitle: "Captura do evento e serialização JSON",
+            icon: ICONS.terminal,
+            tech: "HTTP/2 POST",
+            color: "#3b82f6",
+            actionDesc: "Serialização do payload JSON na origem",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "stage": "01_CLIENT_SERIALIZATION",
+  "source": "web-client-edge",
+  "payload": {
+    "account_id": 94821,
+    "amount": 1450.00,
+    "currency": "BRL"
+  }
+}`
+          },
+          {
+            step: "02",
+            name: "Túnel TLS 1.3",
+            subtitle: "Criptografia simétrica e autenticação",
+            icon: ICONS.lock,
+            tech: "AES-256-GCM",
+            color: "#60a5fa",
+            actionDesc: "Cifragem de transporte TLS 1.3",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "stage": "02_TLS_HANDSHAKE",
+  "cipher": "TLS_AES_256_GCM_SHA384",
+  "ciphertext": "7f9a8b2c4e1d0a9f8e7d6c5b4a3f...",
+  "hmac_sha256": "e3b0c44298fc1c149afbf4c8996fb924"
+}`
+          },
+          {
+            step: "03",
+            name: "API Gateway",
+            subtitle: "Validação JWT, rate-limit e proxy reverso",
+            icon: ICONS.shield,
+            tech: "Envoy Proxy",
+            color: "#818cf8",
+            actionDesc: "Validação de credenciais e roteamento",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "stage": "03_GATEWAY_ROUTING",
+  "auth_status": "VERIFIED",
+  "upstream": "svc-ingest-core:8080",
+  "trace_id": "tr-${pktId}-99812a"
+}`
+          },
+          {
+            step: "04",
+            name: "Message Broker",
+            subtitle: "Persistência em log distribuído e offset",
+            icon: ICONS.layers,
+            tech: "Apache Kafka",
+            color: "#f59e0b",
+            actionDesc: "Append no tópico particionado",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "stage": "04_KAFKA_COMMIT",
+  "topic": "tx.events.v1",
+  "partition": 2,
+  "offset": ${48100 + pktId},
+  "acks": "all"
+}`
+          },
+          {
+            step: "05",
+            name: "Worker Node",
+            subtitle: "Consumo, validação de schema e regras",
+            icon: ICONS.cpu,
+            tech: "Go Worker",
+            color: "#38bdf8",
+            actionDesc: "Execução de regras de negócio e enriquecimento",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "stage": "05_WORKER_PROCESS",
+  "worker_id": "node-sp-04",
+  "schema_check": "PASS",
+  "exec_time_ms": 3.8
+}`
+          },
+          {
+            step: "06",
+            name: "Banco de Dados",
+            subtitle: "Commit transacional e confirmação ACK",
+            icon: ICONS.database,
+            tech: "PostgreSQL",
+            color: "#10b981",
+            actionDesc: "Transação gravada em disco e resposta 200 OK",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "stage": "06_STORAGE_COMMIT",
+  "tx_status": "COMMITTED",
+  "wal_lsn": "0/16B3748",
+  "response": "200 OK"
+}`
+          }
+        ]
+      },
+
+      iot: {
+        title: "Topologia de Transmissão — Ingestão & Streaming em Tempo Real",
+        stages: [
+          {
+            step: "01",
+            name: "Dispositivo Edge",
+            subtitle: "Leitura de sensores e geração do frame",
+            icon: ICONS.terminal,
+            tech: "MQTT v5",
+            color: "#3b82f6",
+            actionDesc: "Coleta de telemetria bruta no dispositivo",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "device": "unit-br-884",
+  "temp_c": 74.8,
+  "vibration_hz": 120.4
+}`
+          },
+          {
+            step: "02",
+            name: "Serialização Binária",
+            subtitle: "Compactação do frame em Protocol Buffers",
+            icon: ICONS.lock,
+            tech: "Protobuf / Snappy",
+            color: "#60a5fa",
+            actionDesc: "Compressão Snappy para redução de banda",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "encoding": "proto3",
+  "compression": "snappy",
+  "size_bytes": 128
+}`
+          },
+          {
+            step: "03",
+            name: "Broker MQTT",
+            subtitle: "Recepção com controle de entrega QoS 1",
+            icon: ICONS.shield,
+            tech: "EMQX Cluster",
+            color: "#818cf8",
+            actionDesc: "Recepção do pacote no broker e PUBACK",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "qos": 1,
+  "topic": "telemetry/ind/raw",
+  "broker_node": "emqx-02"
+}`
+          },
+          {
+            step: "04",
+            name: "Stream Engine",
+            subtitle: "Agregação em janela temporal de 5s",
+            icon: ICONS.layers,
+            tech: "Apache Flink",
+            color: "#f59e0b",
+            actionDesc: "Cálculo de janela deslizante em memória",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "window": "5s_tumbling",
+  "avg_temp": 74.2,
+  "anomaly": false
+}`
+          },
+          {
+            step: "05",
+            name: "Time-Series DB",
+            subtitle: "Escrita indexada por timestamp",
+            icon: ICONS.cpu,
+            tech: "TimescaleDB",
+            color: "#38bdf8",
+            actionDesc: "Inserção em hypertable particionada",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "table": "metrics_ts",
+  "write_latency_ms": 1.4
+}`
+          },
+          {
+            step: "06",
+            name: "Cliente WebSocket",
+            subtitle: "Notificação push para painel de controle",
+            icon: ICONS.database,
+            tech: "WSS Push",
+            color: "#10b981",
+            actionDesc: "Envio do frame atualizado para a tela",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "channel": "live_stream",
+  "status": "DELIVERED"
+}`
+          }
+        ]
+      },
+
+      osi: {
+        title: "Topologia de Transmissão — Encapsulamento de Rede TCP/IP",
+        stages: [
+          {
+            step: "01",
+            name: "Aplicação (L7)",
+            subtitle: "Construção da requisição HTTP e headers",
+            icon: ICONS.terminal,
+            tech: "HTTP/1.1",
+            color: "#3b82f6",
+            actionDesc: "Formatação do payload de aplicação",
+            payload: (pktId) => `POST /v1/sync HTTP/1.1
+Host: core.internal
+X-Packet-ID: PKT-${pktId}
+
+{"op":"SYNC","seq":${pktId}}`
+          },
+          {
+            step: "02",
+            name: "Transporte (L4)",
+            subtitle: "Segmentação TCP, portas e número de sequência",
+            icon: ICONS.lock,
+            tech: "TCP Segment",
+            color: "#60a5fa",
+            actionDesc: "Adição do cabeçalho TCP e checksum",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "src_port": 54912,
+  "dst_port": 443,
+  "seq": ${900120 + pktId * 64},
+  "flags": "PSH, ACK"
+}`
+          },
+          {
+            step: "03",
+            name: "Rede IP (L3)",
+            subtitle: "Endereçamento lógico IPv4 e tabela de rotas",
+            icon: ICONS.shield,
+            tech: "IPv4 Packet",
+            color: "#818cf8",
+            actionDesc: "Encapsulamento IP e definição de próximo salto",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "src_ip": "10.24.0.15",
+  "dst_ip": "172.16.200.40",
+  "ttl": 64
+}`
+          },
+          {
+            step: "04",
+            name: "Enlace & Físico (L2)",
+            subtitle: "Quadro Ethernet MAC e transmissão óptica",
+            icon: ICONS.layers,
+            tech: "802.1Q / 10GbE",
+            color: "#f59e0b",
+            actionDesc: "Envio do quadro Ethernet pelo enlace físico",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "src_mac": "00:1B:44:11:3A:B7",
+  "dst_mac": "00:50:56:C0:00:08",
+  "vlan": 120,
+  "fcs": "0x89F4A21C"
+}`
+          },
+          {
+            step: "05",
+            name: "Firewall Core",
+            subtitle: "Inspeção stateful de sessão e NAT",
+            icon: ICONS.cpu,
+            tech: "Netfilter / DPI",
+            color: "#38bdf8",
+            actionDesc: "Validação de ACL e tradução de endereço",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "rule": "ALLOW_INTERNAL_TLS",
+  "state": "ESTABLISHED"
+}`
+          },
+          {
+            step: "06",
+            name: "Host Destino",
+            subtitle: "Desencapsulamento e retorno do TCP ACK",
+            icon: ICONS.database,
+            tech: "TCP ACK",
+            color: "#10b981",
+            actionDesc: "Entrega ao socket destino e confirmação ACK",
+            payload: (pktId) => `{
+  "packet_id": "PKT-${pktId}",
+  "bytes_read": 1024,
+  "ack_sent": ${900120 + pktId * 64 + 1},
+  "status": "OK"
+}`
+          }
+        ]
+      }
+    };
+
+    let currentScenarioKey = 'api';
+    let speedMultiplier = 1.0;
+    let isRunning = true;
+    let packetCounter = 100;
+    let deliveredCount = 0;
+    let packets = [];
+    let lastSpawnTime = 0;
+    let lastTimestamp = performance.now();
+    let activeLeaderStageIdx = -1;
+
+    const stagesGridEl = document.getElementById('stagesGrid');
+    const packetsLayerEl = document.getElementById('packetsLayer');
+    const stepsChecklistEl = document.getElementById('stepsChecklist');
+    const payloadInspectorEl = document.getElementById('payloadInspector');
+    const logStreamEl = document.getElementById('logStream');
+    const scenarioTitleEl = document.getElementById('scenarioTitle');
+    const layerChipsEls = document.querySelectorAll('#layerChips .layer-chip');
+
+    const metricCurrentStageEl = document.getElementById('metricCurrentStage');
+    const metricPacketsEl = document.getElementById('metricPackets');
+    const metricThroughputEl = document.getElementById('metricThroughput');
+    const metricLatencyEl = document.getElementById('metricLatency');
+    const leaderPacketBadgeEl = document.getElementById('leaderPacketBadge');
+    const currentProtocolBadgeEl = document.getElementById('currentProtocolBadge');
+
+    function renderScenario(scenarioKey) {
+      const scenario = SCENARIOS[scenarioKey];
+      scenarioTitleEl.textContent = scenario.title;
+
+      stagesGridEl.innerHTML = scenario.stages.map((st, idx) => `
+        <div class="stage-node" id="stage-node-${idx}" style="--node-color: ${st.color};">
+          <div class="stage-top-row">
+            <span class="stage-step-id">ETAPA ${st.step}</span>
+            ${st.icon}
+          </div>
+          <div class="stage-title">${st.name}</div>
+          <div class="stage-subtitle">${st.subtitle}</div>
+          <div class="stage-activity-bar">
+            <div class="stage-activity-fill" id="stage-fill-${idx}"></div>
+          </div>
+          <div class="stage-footer">
+            <span>${st.tech}</span>
+            <span class="stage-state" id="stage-pill-${idx}">IDLE</span>
+          </div>
+        </div>
+      `).join('');
+
+      stepsChecklistEl.innerHTML = scenario.stages.map((st, idx) => `
+        <div class="step-row" id="step-row-${idx}">
+          <div class="step-row-left">
+            <span class="step-num">${st.step}</span>
+            <span class="step-action-desc">${st.actionDesc}</span>
+          </div>
+          <span class="step-tech-badge">${st.tech}</span>
+        </div>
+      `).join('');
+
+      packets.forEach(p => p.el.remove());
+      packets = [];
+      activeLeaderStageIdx = -1;
+      spawnPacket(0.02);
+      spawnPacket(0.52);
+    }
+
+    function spawnPacket(initialProgress = 0) {
+      packetCounter++;
+      const pktId = packetCounter;
+
+      const el = document.createElement('div');
+      el.className = 'data-packet';
+      el.innerHTML = `
+        <div class="packet-node"></div>
+        <div class="packet-tag">PKT-${pktId}</div>
+      `;
+      packetsLayerEl.appendChild(el);
+
+      packets.push({
+        id: pktId,
+        progress: initialProgress,
+        el: el,
+        lastLoggedStage: -1
+      });
+    }
+
+    function addLogEntry(pktId, stageObj) {
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0').slice(0, 2);
+
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `
+        <span class="log-time">${timeStr}</span>
+        <span class="log-stage">PKT-${pktId}</span>
+        <span class="log-msg">[${stageObj.step}] ${stageObj.actionDesc}</span>
+      `;
+
+      logStreamEl.prepend(entry);
+      while (logStreamEl.children.length > 9) {
+        logStreamEl.lastChild.remove();
+      }
+    }
+
+    function updateSimulation(timestamp) {
+      const dt = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+
+      if (isRunning) {
+        const scenario = SCENARIOS[currentScenarioKey];
+        const numStages = scenario.stages.length;
+
+        const spawnIntervalMs = 2600 / speedMultiplier;
+        if (timestamp - lastSpawnTime > spawnIntervalMs) {
+          if (packets.length < 6) {
+            spawnPacket(0);
+          }
+          lastSpawnTime = timestamp;
+        }
+
+        const baseSpeedPerSec = 0.135;
+        const stageProgressMap = new Array(numStages).fill(0);
+
+        const trackRect = document.getElementById('trackWrapper').getBoundingClientRect();
+        const firstBar = document.querySelector('#stage-node-0 .stage-activity-bar');
+        const lastBar = document.querySelector(`#stage-node-${numStages - 1} .stage-activity-bar`);
+
+        let startX = 0, endX = 0, centerY = 0;
+        if (firstBar && lastBar && trackRect.width > 0) {
+          const firstRect = firstBar.getBoundingClientRect();
+          const lastRect = lastBar.getBoundingClientRect();
+
+          startX = firstRect.left - trackRect.left;
+          endX = lastRect.right - trackRect.left;
+          centerY = (firstRect.top + firstRect.height / 2) - trackRect.top;
+
+          const wireEl = document.getElementById('pipelineWire');
+          wireEl.style.top = `${centerY}px`;
+          wireEl.style.left = `${startX}px`;
+          wireEl.style.width = `${endX - startX}px`;
+        }
+
+        for (let i = packets.length - 1; i >= 0; i--) {
+          const pkt = packets[i];
+          pkt.progress += dt * baseSpeedPerSec * speedMultiplier;
+
+          if (pkt.progress >= 1.0) {
+            pkt.el.remove();
+            packets.splice(i, 1);
+            deliveredCount++;
+            metricPacketsEl.textContent = deliveredCount;
+            continue;
+          }
+
+          const exactStagePos = pkt.progress * numStages;
+          const stageIdx = Math.min(numStages - 1, Math.floor(exactStagePos));
+          const localProgress = (exactStagePos - stageIdx) * 100;
+          const stageObj = scenario.stages[stageIdx];
+
+          stageProgressMap[stageIdx] = Math.max(stageProgressMap[stageIdx], localProgress);
+
+          if (pkt.lastLoggedStage !== stageIdx) {
+            pkt.lastLoggedStage = stageIdx;
+            addLogEntry(pkt.id, stageObj);
+          }
+
+          // Alinha a bolinha exatamente na ponta da linha que está enchendo dentro do card da etapa atual
+          const currentBar = document.querySelector(`#stage-node-${stageIdx} .stage-activity-bar`);
+          if (currentBar && trackRect.width > 0) {
+            const barRect = currentBar.getBoundingClientRect();
+            const barStartX = barRect.left - trackRect.left;
+            const barWidth = barRect.width;
+            const barCenterY = (barRect.top + barRect.height / 2) - trackRect.top;
+
+            // Posição X exata na ponta do preenchimento (localProgress de 0 a 100%)
+            const exactTipX = barStartX + (localProgress / 100) * barWidth;
+            pkt.el.style.top = `${barCenterY}px`;
+            pkt.el.style.left = `${exactTipX}px`;
+          } else if (endX > startX) {
+            const currentX = startX + pkt.progress * (endX - startX);
+            pkt.el.style.top = `${centerY}px`;
+            pkt.el.style.left = `${currentX}px`;
+          }
+
+          const nodeDot = pkt.el.querySelector('.packet-node');
+          nodeDot.style.boxShadow = `0 0 0 2px ${stageObj.color}`;
+        }
+
+        // Preenche as etapas anteriores em 100% para o pacote líder e a etapa atual acompanhando a bolinha
+        const leaderPktForBar = packets[0];
+        const leaderStageForBar = leaderPktForBar ? Math.min(numStages - 1, Math.floor(leaderPktForBar.progress * numStages)) : -1;
+
+        for (let s = 0; s < numStages; s++) {
+          const nodeEl = document.getElementById(`stage-node-${s}`);
+          const fillEl = document.getElementById(`stage-fill-${s}`);
+          const pillEl = document.getElementById(`stage-pill-${s}`);
+
+          if (stageProgressMap[s] > 0) {
+            nodeEl.classList.add('active');
+            fillEl.style.width = `${stageProgressMap[s].toFixed(1)}%`;
+            pillEl.textContent = `${stageProgressMap[s].toFixed(0)}%`;
+          } else if (s < leaderStageForBar) {
+            nodeEl.classList.remove('active');
+            fillEl.style.width = '100%';
+            pillEl.textContent = 'DONE';
+          } else {
+            nodeEl.classList.remove('active');
+            fillEl.style.width = '0%';
+            pillEl.textContent = 'IDLE';
+          }
+        }
+
+        if (packets.length > 0) {
+          const leaderPkt = packets[0];
+          const leaderStageIdx = Math.min(numStages - 1, Math.floor(leaderPkt.progress * numStages));
+          const st = scenario.stages[leaderStageIdx];
+
+          leaderPacketBadgeEl.textContent = `PKT-${leaderPkt.id}`;
+          metricCurrentStageEl.textContent = `${st.step} / ${st.name}`;
+          currentProtocolBadgeEl.textContent = st.tech;
+
+          if (activeLeaderStageIdx !== leaderStageIdx) {
+            activeLeaderStageIdx = leaderStageIdx;
+            payloadInspectorEl.textContent = st.payload(leaderPkt.id);
+
+            document.querySelectorAll('.step-row').forEach((row, idx) => {
+              row.classList.toggle('active', idx === leaderStageIdx);
+            });
+
+            layerChipsEls.forEach((chip, idx) => {
+              chip.classList.toggle('lit', idx <= leaderStageIdx);
+            });
+          }
+        }
+
+        const throughput = (42.0 * speedMultiplier + (Math.sin(timestamp / 400) * 1.8)).toFixed(1);
+        const latency = Math.max(4, Math.round(24 / speedMultiplier + Math.cos(timestamp / 300) * 1));
+        metricThroughputEl.textContent = `${throughput} MB/s`;
+        metricLatencyEl.textContent = `${latency} ms`;
+      }
+
+      requestAnimationFrame(updateSimulation);
+    }
+
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    const speedBtns = document.querySelectorAll('.speed-btn');
+
+    function setSpeed(val) {
+      speedMultiplier = parseFloat(val);
+      speedSlider.value = speedMultiplier;
+      speedValue.textContent = `${speedMultiplier.toFixed(1)}x`;
+
+      speedBtns.forEach(btn => {
+        btn.classList.toggle('active', Math.abs(parseFloat(btn.dataset.speed) - speedMultiplier) < 0.05);
+      });
+    }
+
+    speedSlider.addEventListener('input', (e) => setSpeed(e.target.value));
+    speedBtns.forEach(btn => {
+      btn.addEventListener('click', () => setSpeed(btn.dataset.speed));
+    });
+
+    document.querySelectorAll('#scenarioTabs .tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#scenarioTabs .tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentScenarioKey = btn.dataset.scenario;
+        renderScenario(currentScenarioKey);
+      });
+    });
+
+    const togglePlayBtn = document.getElementById('togglePlayBtn');
+    const playText = document.getElementById('playText');
+    const statusDot = document.getElementById('statusDot');
+
+    togglePlayBtn.addEventListener('click', () => {
+      isRunning = !isRunning;
+      togglePlayBtn.classList.toggle('paused', !isRunning);
+      if (isRunning) {
+        playText.textContent = 'Pausar';
+        statusDot.style.background = 'var(--status-ok)';
+      } else {
+        playText.textContent = 'Retomar';
+        statusDot.style.background = 'var(--status-warn)';
+      }
+    });
+
+    renderScenario(currentScenarioKey);
+
+    // =========================================================================
+    // JOGO DO DINOSSAURO (T-REX RUNNER) NO TOPO DO SITE
+    // =========================================================================
+    const dinoCanvas = document.getElementById('dinoCanvas');
+    const dCtx = dinoCanvas.getContext('2d');
+    const dinoScoreEl = document.getElementById('dinoScore');
+    const dinoHighScoreEl = document.getElementById('dinoHighScore');
+    const dinoStateLabelEl = document.getElementById('dinoStateLabel');
+    const dinoContainer = document.getElementById('dinoContainer');
+
+    function resizeDinoCanvas() {
+      const rect = dinoContainer.getBoundingClientRect();
+      if (rect.width > 0) {
+        dinoCanvas.width = rect.width;
+        dinoCanvas.height = 78;
+      }
+    }
+    window.addEventListener('resize', resizeDinoCanvas);
+    resizeDinoCanvas();
+
+    const groundY = 64;
+    const dino = {
+      x: 56,
+      y: groundY - 26,
+      w: 22,
+      h: 26,
+      vy: 0,
+      gravity: 980,
+      jumpPower: -330,
+      onGround: true,
+      legFrame: 0
+    };
+
+    let dinoObstacles = [];
+    let dinoClouds = [
+      { x: 240, y: 18, w: 36 },
+      { x: 680, y: 12, w: 48 },
+      { x: 1050, y: 22, w: 32 }
+    ];
+    let dinoScore = 0;
+    let dinoHighScore = 1024;
+    let groundOffset = 0;
+    let obstacleTimer = 0;
+
+    function triggerDinoJump() {
+      if (dino.onGround && isRunning) {
+        dino.vy = dino.jumpPower;
+        dino.onGround = false;
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (document.activeElement.tagName !== 'BUTTON') {
+          e.preventDefault();
+          triggerDinoJump();
+        }
+      }
+    });
+    dinoContainer.addEventListener('mousedown', triggerDinoJump);
+
+    function drawPixelDino(ctx, x, y, legStep) {
+      ctx.fillStyle = '#ededf0';
+      // Cabeça
+      ctx.fillRect(x + 10, y, 12, 9);
+      // Olho escuro
+      ctx.fillStyle = '#0a0a0c';
+      ctx.fillRect(x + 13, y + 2, 2, 2);
+      ctx.fillStyle = '#ededf0';
+      // Boca
+      ctx.fillRect(x + 14, y + 7, 6, 2);
+      // Pescoço e tronco
+      ctx.fillRect(x + 5, y + 8, 11, 11);
+      // Braço
+      ctx.fillRect(x + 16, y + 11, 4, 2);
+      ctx.fillRect(x + 19, y + 11, 2, 4);
+      // Cauda
+      ctx.fillRect(x, y + 10, 5, 6);
+      ctx.fillRect(x - 3, y + 8, 3, 5);
+      // Pernas alternando enquanto corre
+      if (!dino.onGround) {
+        ctx.fillRect(x + 6, y + 19, 3, 6);
+        ctx.fillRect(x + 12, y + 19, 3, 6);
+      } else if (legStep < 0.5) {
+        ctx.fillRect(x + 6, y + 19, 3, 7);
+        ctx.fillRect(x + 12, y + 19, 3, 3);
+      } else {
+        ctx.fillRect(x + 6, y + 19, 3, 3);
+        ctx.fillRect(x + 12, y + 19, 3, 7);
+      }
+    }
+
+    function updateAndDrawDino(dt) {
+      const W = dinoCanvas.width;
+      const H = dinoCanvas.height;
+
+      if (isRunning) {
+        const runSpeed = 240 * Math.max(0.6, Math.min(2.4, speedMultiplier));
+        groundOffset = (groundOffset + runSpeed * dt) % 24;
+        dino.legFrame = (dino.legFrame + dt * 5 * speedMultiplier) % 1;
+
+        // Score sobe continuamente conforme o fluxo roda
+        dinoScore += dt * 14 * speedMultiplier;
+        const scInt = Math.floor(dinoScore);
+        if (scInt > dinoHighScore) dinoHighScore = scInt;
+        dinoScoreEl.textContent = String(scInt).padStart(5, '0');
+        dinoHighScoreEl.textContent = String(dinoHighScore).padStart(5, '0');
+
+        // Física vertical do Dino
+        if (!dino.onGround) {
+          dino.vy += dino.gravity * dt;
+          dino.y += dino.vy * dt;
+          if (dino.y >= groundY - dino.h) {
+            dino.y = groundY - dino.h;
+            dino.vy = 0;
+            dino.onGround = true;
+          }
+        }
+
+        dinoStateLabelEl.textContent = dino.onGround ? 'RUNNING' : 'JUMPING';
+        dinoStateLabelEl.style.color = dino.onGround ? 'var(--status-ok)' : '#38bdf8';
+
+        // Geração de cactos / pacotes de obstáculo na pista
+        obstacleTimer -= dt * speedMultiplier;
+        if (obstacleTimer <= 0) {
+          const isDouble = Math.random() > 0.55;
+          dinoObstacles.push({
+            x: W + 20,
+            w: isDouble ? 22 : 12,
+            h: isDouble ? 22 : 18,
+            color: isDouble ? '#f59e0b' : '#3b82f6'
+          });
+          obstacleTimer = 1.15 + Math.random() * 0.9;
+        }
+
+        // Move obstáculos e aciona Auto-Pilot (pula sozinho se o usuário não pular)
+        for (let i = dinoObstacles.length - 1; i >= 0; i--) {
+          const ob = dinoObstacles[i];
+          ob.x -= runSpeed * dt;
+
+          // Auto-pulo inteligente quando o obstáculo se aproxima do Dino
+          const dist = ob.x - (dino.x + dino.w);
+          if (dist > 12 && dist < 68 && dino.onGround) {
+            triggerDinoJump();
+          }
+
+          // Caso pule manualmente na hora errada e encoste, reseta o score mas continua rodando
+          if (
+            dino.x + dino.w - 4 > ob.x &&
+            dino.x + 4 < ob.x + ob.w &&
+            dino.y + dino.h > groundY - ob.h
+          ) {
+            dinoScore = 0;
+            dinoObstacles.splice(i, 1);
+            continue;
+          }
+
+          if (ob.x + ob.w < -20) {
+            dinoObstacles.splice(i, 1);
+          }
+        }
+
+        // Nuvens de fundo
+        dinoClouds.forEach(c => {
+          c.x -= (runSpeed * 0.2) * dt;
+          if (c.x + c.w < 0) c.x = W + 30;
+        });
+      }
+
+      // Renderização limpa
+      dCtx.clearRect(0, 0, W, H);
+
+      // Nuvens discretas
+      dCtx.fillStyle = '#1e1e28';
+      dinoClouds.forEach(c => {
+        dCtx.fillRect(c.x, c.y, c.w, 4);
+        dCtx.fillRect(c.x + 6, c.y - 3, c.w - 12, 3);
+      });
+
+      // Linha do solo
+      dCtx.strokeStyle = '#2c2c38';
+      dCtx.lineWidth = 1;
+      dCtx.beginPath();
+      dCtx.moveTo(0, groundY);
+      dCtx.lineTo(W, groundY);
+      dCtx.stroke();
+
+      // Detalhes de movimento no solo
+      dCtx.fillStyle = '#343442';
+      for (let gx = -groundOffset; gx < W; gx += 24) {
+        dCtx.fillRect(gx, groundY + 4, 6, 1);
+        dCtx.fillRect(gx + 12, groundY + 7, 3, 1);
+      }
+
+      // Obstáculos estilo cacto/bloco técnico
+      dinoObstacles.forEach(ob => {
+        const oy = groundY - ob.h;
+        dCtx.fillStyle = ob.color;
+        dCtx.fillRect(ob.x + 3, oy, 6, ob.h);
+        dCtx.fillRect(ob.x, oy + 5, 3, 6);
+        dCtx.fillRect(ob.x + 9, oy + 4, 3, 7);
+        if (ob.w > 14) {
+          dCtx.fillRect(ob.x + 14, oy + 3, 5, ob.h - 3);
+        }
+      });
+
+      // Desenha o T-Rex
+      drawPixelDino(dCtx, dino.x, Math.round(dino.y), dino.legFrame);
+    }
+
+    // Integra o loop do Dino ao loop principal
+    let prevDinoTime = performance.now();
+    function dinoLoop(now) {
+      const dt = Math.min(0.05, (now - prevDinoTime) / 1000);
+      prevDinoTime = now;
+      updateAndDrawDino(dt);
+      requestAnimationFrame(dinoLoop);
+    }
+
+    requestAnimationFrame(updateSimulation);
+    requestAnimationFrame(dinoLoop);
+  </script>
+</body>
+</html>
